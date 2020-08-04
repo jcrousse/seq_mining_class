@@ -51,13 +51,18 @@ class ExamplesGenerator:
         Change here if we want to introduce minimal number of tokens between two patten tokens"""
         return len(self.pattern) <= len(examples)
 
-    def has_pattern(self, example):
-        idx_min = 0
-        for token_data in self.pattern:
-            max_spaces = token_data[0]
-            token_value = token_data[1]
-            search_window = example[idx_min: idx_min + max_spaces]
-            if token_value not in search_window:
-                return False
-            idx_min = idx_min + search_window.index(token_value)
-        return True
+    def has_pattern(self, example, sub_pattern=None):
+        if sub_pattern is None:
+            sub_pattern = self.pattern
+        if len(sub_pattern) == 0:
+            return True
+        else:
+            max_spaces = sub_pattern[0][0]
+            token_value = sub_pattern[0][1]
+            token_indices = [i for i, t in enumerate(example[0:max_spaces]) if t == token_value]
+            for idx in token_indices:
+                if self.has_pattern(example[idx + 1:], sub_pattern[1:]):
+                    return True
+            return False
+
+

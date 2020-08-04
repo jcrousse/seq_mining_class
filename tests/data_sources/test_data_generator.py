@@ -23,3 +23,10 @@ class TestExamplesGenerator(TestCase):
         example_pat = eg.insert_pattern(list(range(100)))
         self.assertTrue(eg.has_pattern(example_pat))
         self.assertFalse(eg.has_pattern(list(range(100))))
+
+        """ test recursive find"""
+
+        eg = ExamplesGenerator(seed=7357, pattern=[(3, 123), (3, 456), (3, 789)])
+        example = [1, 123, 123, 1, 456, 456, 1, 1, 789]
+        self.assertTrue(eg.has_pattern(example))
+
