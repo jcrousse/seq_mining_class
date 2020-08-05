@@ -10,7 +10,7 @@ class TestExamplesGenerator(TestCase):
     def test_call_seed(self):
         """How does this seed set up at  init works if we call the random generator later"""
         eg = ExamplesGenerator(seq_len=10, seed=456)
-        examples = [next(eg()) for _ in range(10)]
+        examples = [next(eg())[0] for _ in range(10)]
         self.assertEqual(list(examples[0][0:3]), [27, 43, 89])
 
     def test_insert_pattern(self):
@@ -45,5 +45,5 @@ class TestExamplesGenerator(TestCase):
     def test_proportions(self):
         eg = ExamplesGenerator(seed=7357, pattern=[(10, 123), (10, 456), (10, 789)])
         examples = [next(eg()) for _ in range(10000)]
-        has_pattern = [eg.has_pattern(e) for e in examples]
+        has_pattern = [eg.has_pattern(e[0]) for e in examples]
         self.assertEqual(sum(has_pattern), 4953)

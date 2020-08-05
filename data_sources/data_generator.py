@@ -27,19 +27,21 @@ class ExamplesGenerator:
         """main call to generate an example"""
         while True:
             example_nopattern = np.random.randint(0, self.vocab_size, self.seq_len)
-            example_pattern = self.random_pattern(example_nopattern)
-            yield example_pattern
+            example_pattern, label = self.random_pattern(example_nopattern)
+            yield example_pattern, label
 
     def random_pattern(self, example):
         """ tosses a coin to decide whether to modify the example to add the pattern or to remove it"""
+        label = 0
         if np.random.rand() > self.pos_pct:
             self.count_p += 1
+            label = 1
             if not self.has_pattern(example):
                 example = self.insert_pattern(example)
         else:
             if self.has_pattern(example):
                 example = self.remove_pattern(example)
-        return example
+        return example, label
 
     def insert_pattern(self, examples):
         if self.can_fit_pattern(examples):
@@ -89,4 +91,3 @@ class ExamplesGenerator:
     def has_pattern(self, example):
         pattern_idx = self.find_pattern_indices(example)
         return True if len(pattern_idx) == len(self.pattern) else False
-
