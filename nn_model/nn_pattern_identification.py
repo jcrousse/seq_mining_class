@@ -1,11 +1,14 @@
 import tensorflow as tf
 from data_sources.data_generator import ExamplesGenerator
 # TODO:
-#  -Model to identify presence of patterns in random dataset.
-#       - To ensure model works: Seq lent 10 and pattern with values above vocab_size.
-#  -Parameter search to try different dataset sizes, sequence sizes and pattern sizes.
+#  -Parameter search to try different dataset sizes, sequence sizes and pattern sizes. find NN breaking point.
+#  -Tensorboard to illustrate where NN breaks (epochs and test accuracy)
+#  -Test how Seq mining works where NN breaks
+#  -How to simulate sub sequences that are positive or negative within the pattern? Is it necessary?
+#       Or just mention it?
 
-VOCAB_SIZE = 10
+
+VOCAB_SIZE = 30
 SEQ_LEN = 20
 PATTERN = [(2, 10), (2, 11), (2, 12), (2, 13), (2, 14)]
 
