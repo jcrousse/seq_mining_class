@@ -1,30 +1,22 @@
 import tensorflow as tf
 from data_sources.data_generator import ExamplesGenerator
+
+
 # TODO:
-#  -Parameter search to try different dataset sizes, sequence sizes and pattern sizes. find NN breaking point.
-#  -Tensorboard to illustrate where NN breaks (epochs and test accuracy)
-#  -Test how Seq mining works where NN breaks
+#  -Adjust seq mining to find sequences that are over-represented in on label.
+#       -Remove sub-sequences that are not higher in predictive power.
+#       -One single var model per sequence? Groups of sequences?
 #  -How to simulate sub sequences that are positive or negative within the pattern? Is it necessary?
 #       Or just mention it?
+#  -More realistic: More than one possible pattern?
 
-
-VOCAB_SIZE = 30
-SEQ_LEN = 20
-PATTERN = [(2, 10), (2, 11), (2, 12), (2, 13), (2, 14)]
-
-actual_vocab_size = max([VOCAB_SIZE] + [e[1] for e in PATTERN])
-
-
-def get_dataset(seq_len, vocab_size, seed, pattern):
+def get_dataset(seq_len, vocab_size, seed, pattern, batch_size=1024):
     data_generator = ExamplesGenerator(seq_len=seq_len, vocab_size=vocab_size, seed=seed, pattern=pattern)
     dataset = tf.data.Dataset.from_generator(data_generator,
                                              output_types=(tf.int64, tf.int64),
-                                             output_shapes=(tf.TensorShape([seq_len]), tf.TensorShape([]))).batch(1024)
+                                             output_shapes=(tf.TensorShape([seq_len]), tf.TensorShape([]))
+                                             ).batch(batch_size)
     return dataset
-
-
-train_dataset = get_dataset(SEQ_LEN, VOCAB_SIZE, 111, PATTERN)
-test_dataset = get_dataset(SEQ_LEN, VOCAB_SIZE, 222, PATTERN)
 
 
 def get_model(vocab_size, embed_size=4):
@@ -37,11 +29,64 @@ def get_model(vocab_size, embed_size=4):
     return model
 
 
-model = get_model(actual_vocab_size + 1)
-model.compile(optimizer='adam',
-              loss=tf.losses.BinaryCrossentropy(from_logits=True),
-              metrics=['accuracy'],
-              )
+def run_experiment(name, seq_len, vocab_size, pattern):
+    train_dataset = get_dataset(seq_len, vocab_size, 111, pattern)
+    validation_dataset = get_dataset(seq_len, vocab_size, 222, pattern, batch_size=256)
+    test_dataset = get_dataset(seq_len, vocab_size, 333, pattern, batch_size=256)
 
-model.fit(train_dataset, epochs=15, steps_per_epoch=10)
-model.evaluate(test_dataset.take(10), verbose=2)
+    tensorboard = tf.keras.callbacks.TensorBoard(log_dir=f"tb_logs/{name}",
+                                                 histogram_freq=10)
+
+    early_stop = tf.keras.callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        min_delta=0.05,
+        patience=20)
+
+    actual_vocab_size = max([vocab_size] + [e[1] for e in pattern])
+
+    model = get_model(actual_vocab_size + 1)
+    model.compile(optimizer='adam',
+                  loss=tf.losses.BinaryCrossentropy(from_logits=True),
+                  metrics=['accuracy'],
+                  )
+
+    model.fit(train_dataset,
+              validation_data=validation_dataset,
+              epochs=40,
+              steps_per_epoch=10,
+              validation_steps=1,
+              callbacks=[tensorboard, early_stop])
+    model.evaluate(test_dataset.take(10), verbose=2)
+
+
+if __name__ == '__main__':
+    tokens1 = [10, 11, 12, 13, 14]
+    experiments = {
+        "alpha": {
+            'seq_len': 20,
+            'vocab_size': 20,
+            'pattern': [(2, t) for t in tokens1]
+        },
+        "bravo": {
+            'seq_len': 50,
+            'vocab_size': 50,
+            'pattern': [(5, t) for t in tokens1]
+        },
+        "charlie": {
+            'seq_len': 100,
+            'vocab_size': 100,
+            'pattern': [(20, t) for t in tokens1]
+        },
+        "delta": {
+            'seq_len': 250,
+            'vocab_size': 500,
+            'pattern': [(30, t) for t in tokens1]
+        },
+        "echo": {
+            'seq_len': 1000,
+            'vocab_size': 1000,
+            'pattern': [(100, t) for t in tokens1]
+        }
+    }
+    for exp_name, exp_parameters in experiments.items():
+        run_experiment(exp_name, **exp_parameters)
