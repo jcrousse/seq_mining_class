@@ -36,10 +36,10 @@ class ExamplesGenerator:
         if np.random.rand() > self.pos_pct:
             self.count_p += 1
             label = 1
-            if not self.has_pattern(example):
+            if not self.has_pattern(example, self.pattern):
                 example = self.insert_pattern(example)
         else:
-            if self.has_pattern(example):
+            if self.has_pattern(example, self.pattern):
                 example = self.remove_pattern(example)
         return example, label
 
@@ -55,11 +55,11 @@ class ExamplesGenerator:
 
     def remove_pattern(self, example):
         """ while a pattern is found, randomly replace a random element from the pattern"""
-        pattern_indices = self.find_pattern_indices(example)
+        pattern_indices = self.find_pattern_indices(example, self.pattern)
         while pattern_indices:
             replace_idx = random.choice(pattern_indices)
             example[replace_idx] = np.random.randint(0, self.vocab_size)
-            pattern_indices = self.find_pattern_indices(example)
+            pattern_indices = self.find_pattern_indices(example, self.pattern)
         return example
 
     def can_fit_pattern(self, examples):
@@ -69,25 +69,31 @@ class ExamplesGenerator:
         Change here if we want to introduce minimal number of tokens between two patten tokens"""
         return len(self.pattern) <= len(examples)
 
-    def find_pattern_indices(self, example, sub_pattern=None):
+    @staticmethod
+    def find_pattern_indices(example, pattern):
         """ return the index location of pattern tokens.
         empty list if no pattern found"""
-        if sub_pattern is None:
-            sub_pattern = self.pattern
-        if len(sub_pattern) == 0:
+        if len(pattern) == 0:
             return []
         else:
-            max_spaces = sub_pattern[0][0]
-            token_value = sub_pattern[0][1]
+            max_spaces = pattern[0][0]
+            token_value = pattern[0][1]
             token_indices = [i for i, t in enumerate(example[0:max_spaces]) if t == token_value]
             for idx in token_indices:
-                tail_indices = self.find_pattern_indices(example[idx + 1:], sub_pattern[1:])
+                tail_indices = ExamplesGenerator.find_pattern_indices(example[idx + 1:], pattern[1:])
                 tail_indices_adjusted = [i + idx + 1 for i in tail_indices]
                 token_indices = [idx] + tail_indices_adjusted
-                if len(token_indices) == len(sub_pattern):
+                if len(token_indices) == len(pattern):
                     return token_indices
             return []
 
-    def has_pattern(self, example):
-        pattern_idx = self.find_pattern_indices(example)
-        return True if len(pattern_idx) == len(self.pattern) else False
+    @staticmethod
+    def has_pattern(example, pattern):
+        pattern_idx = ExamplesGenerator.find_pattern_indices(example, pattern)
+        return True if len(pattern_idx) == len(pattern) else False
+
+    @staticmethod
+    def seq_to_pattern(seq, gap_size=1):
+        """Convert a sequelce (list of tokens) to a patter (list of tuples (gap_size, token))
+        """
+        return [(gap_size, t) for t in seq]

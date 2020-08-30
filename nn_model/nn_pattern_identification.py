@@ -10,7 +10,7 @@ from data_sources.data_generator import ExamplesGenerator
 #       Or just mention it?
 #  -More realistic: More than one possible pattern?
 
-def get_dataset(seq_len, vocab_size, seed, pattern, batch_size=1024):
+def get_dataset(seq_len, vocab_size, seed, pattern, batch_size=200):
     data_generator = ExamplesGenerator(seq_len=seq_len, vocab_size=vocab_size, seed=seed, pattern=pattern)
     dataset = tf.data.Dataset.from_generator(data_generator,
                                              output_types=(tf.int64, tf.int64),
@@ -29,10 +29,13 @@ def get_model(vocab_size, embed_size=4):
     return model
 
 
-def run_experiment(name, seq_len, vocab_size, pattern):
+def run_experiment(name, seq_len, vocab_size, pattern, data_limit=None):
     train_dataset = get_dataset(seq_len, vocab_size, 111, pattern)
     validation_dataset = get_dataset(seq_len, vocab_size, 222, pattern, batch_size=256)
     test_dataset = get_dataset(seq_len, vocab_size, 333, pattern, batch_size=256)
+
+    if isinstance(data_limit, int):
+        train_dataset = get_dataset(seq_len, vocab_size, 111, pattern, batch_size=data_limit).take(1).repeat()
 
     tensorboard = tf.keras.callbacks.TensorBoard(log_dir=f"tb_logs/{name}",
                                                  histogram_freq=10)
@@ -53,10 +56,10 @@ def run_experiment(name, seq_len, vocab_size, pattern):
     model.fit(train_dataset,
               validation_data=validation_dataset,
               epochs=40,
-              steps_per_epoch=10,
+              steps_per_epoch=50,
               validation_steps=1,
               callbacks=[tensorboard, early_stop])
-    model.evaluate(test_dataset.take(10), verbose=2)
+    model.evaluate(test_dataset.take(1000), verbose=2)
 
 
 if __name__ == '__main__':
@@ -86,7 +89,49 @@ if __name__ == '__main__':
             'seq_len': 1000,
             'vocab_size': 1000,
             'pattern': [(100, t) for t in tokens1]
-        }
+        },
+        "alpha_200": {
+            'seq_len': 20,
+            'vocab_size': 20,
+            'pattern': [(2, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "bravo_200": {
+            'seq_len': 50,
+            'vocab_size': 50,
+            'pattern': [(5, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "charlie_200": {
+            'seq_len': 100,
+            'vocab_size': 100,
+            'pattern': [(20, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "delta_200": {
+            'seq_len': 250,
+            'vocab_size': 500,
+            'pattern': [(30, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "echo_200": {
+            'seq_len': 1000,
+            'vocab_size': 1000,
+            'pattern': [(100, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "forxtrot_200": {
+            'seq_len': 2000,
+            'vocab_size': 2000,
+            'pattern': [(100, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "golf_200": {
+            'seq_len': 5000,
+            'vocab_size': 10000,
+            'pattern': [(100, t) for t in tokens1],
+            'data_limit': 200
+        },
     }
     for exp_name, exp_parameters in experiments.items():
         run_experiment(exp_name, **exp_parameters)
