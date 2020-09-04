@@ -7,6 +7,13 @@ class ExamplesGenerator:
     A percentage of the generated sequences have a pre-defined 'pattern' which is a sequence of tokens,
     and the number of tokens between them.
     The pattern may also occur randomly.
+    TODO:
+        -Multiple patterns: enable to give a list of patterns + a weight. A random pattern will be selected following
+        weights
+        -TP / FP rate:
+            -If randomly pick FP: pattern is not added
+            -If randomly pick FN: Pattern is added.
+        -Test time taken to generate examples: Is the training taking time or the data generating process ?
      """
     def __init__(self, seq_len=100, vocab_size=100, seed=None, pos_pct=0.5, pattern=None):
         """
@@ -22,6 +29,7 @@ class ExamplesGenerator:
         self.pattern = pattern or []
         np.random.seed(seed)
         self.count_p = 0
+        # todo: put all patterns in a list, even if single pattern
 
     def __call__(self):
         """main call to generate an example"""
@@ -36,9 +44,13 @@ class ExamplesGenerator:
         if np.random.rand() > self.pos_pct:
             self.count_p += 1
             label = 1
+            # todo: pick pattern from list
+            # todo: add "not fp" as condition
             if not self.has_pattern(example, self.pattern):
                 example = self.insert_pattern(example)
         else:
+            # todo: check all patterns here if multiple
+            # todo: add "not fn" as condition, otherwise add pattern instead
             if self.has_pattern(example, self.pattern):
                 example = self.remove_pattern(example)
         return example, label
