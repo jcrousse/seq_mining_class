@@ -7,11 +7,6 @@ class ExamplesGenerator:
     A percentage of the generated sequences have a pre-defined 'pattern' which is a sequence of tokens,
     and the number of tokens between them.
     The pattern may also occur randomly.
-    TODO:
-        -TP / FP rate:
-            -If randomly pick FP: pattern is not added
-            -If randomly pick FN: Pattern is added.
-        -Test time taken to generate examples: Is the training taking time or the data generating process ?
      """
     def __init__(self, seq_len: int = 100, vocab_size: int = 100, seed=None, pos_pct: float = 0.5, pattern: list = None,
                  multiple_patterns: list = None, fp_rate: float = 0.0, fn_rate: float = 0.0):

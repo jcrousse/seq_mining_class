@@ -10,8 +10,9 @@ from data_sources.data_generator import ExamplesGenerator
 #       Or just mention it?
 #  -More realistic: More than one possible pattern?
 
-def get_dataset(seq_len, vocab_size, seed, pattern, batch_size=200):
-    data_generator = ExamplesGenerator(seq_len=seq_len, vocab_size=vocab_size, seed=seed, pattern=pattern)
+def get_dataset(seq_len, vocab_size, seed, pattern=None, batch_size=200, multiple_patterns=None, **kwargs):
+    data_generator = ExamplesGenerator(seq_len=seq_len, vocab_size=vocab_size, seed=seed,
+                                       pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
     dataset = tf.data.Dataset.from_generator(data_generator,
                                              output_types=(tf.int64, tf.int64),
                                              output_shapes=(tf.TensorShape([seq_len]), tf.TensorShape([]))
@@ -29,10 +30,13 @@ def get_model(vocab_size, embed_size=4):
     return model
 
 
-def run_experiment(name, seq_len, vocab_size, pattern, data_limit=None):
-    train_dataset = get_dataset(seq_len, vocab_size, 111, pattern)
-    validation_dataset = get_dataset(seq_len, vocab_size, 222, pattern, batch_size=256)
-    test_dataset = get_dataset(seq_len, vocab_size, 333, pattern, batch_size=256)
+def run_experiment(name, seq_len, vocab_size, pattern=None, data_limit=None, multiple_patterns=None, **kwargs):
+    train_dataset = get_dataset(seq_len, vocab_size, 111,
+                                pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
+    validation_dataset = get_dataset(seq_len, vocab_size, 222, batch_size=256,
+                                     pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
+    test_dataset = get_dataset(seq_len, vocab_size, 333, batch_size=256,
+                               pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
 
     if isinstance(data_limit, int):
         train_dataset = get_dataset(seq_len, vocab_size, 111, pattern, batch_size=data_limit).take(1).repeat()
@@ -45,7 +49,12 @@ def run_experiment(name, seq_len, vocab_size, pattern, data_limit=None):
         min_delta=0.05,
         patience=20)
 
-    actual_vocab_size = max([vocab_size] + [e[1] for e in pattern])
+    if multiple_patterns:
+        all_patterns = multiple_patterns[0]
+    else:
+        all_patterns = [pattern]
+
+    actual_vocab_size = max([vocab_size] + [e[1] for p in all_patterns for e in p])
 
     model = get_model(actual_vocab_size + 1)
     model.compile(optimizer='adam',
@@ -58,12 +67,25 @@ def run_experiment(name, seq_len, vocab_size, pattern, data_limit=None):
               epochs=40,
               steps_per_epoch=50,
               validation_steps=1,
-              callbacks=[tensorboard, early_stop])
+              callbacks=[tensorboard])
     model.evaluate(test_dataset.take(1000), verbose=2)
+
+
+def get_multiple_patterns(n=2):
+    return [
+        [
+            [(n, 10), (n, 11), (n, 12), (n, 13), (n, 14)],
+            [(n, 1), (n, 2), (n, 3), (n, 4), (n, 5)],
+            [(n, 7), (n, 8), (n, 9), (n, 10), (n, 11)]
+        ],
+        [0.4, 0.3, 0.3]
+    ]
 
 
 if __name__ == '__main__':
     tokens1 = [10, 11, 12, 13, 14]
+
+
     experiments = {
         "alpha": {
             'seq_len': 20,
@@ -130,6 +152,22 @@ if __name__ == '__main__':
             'seq_len': 5000,
             'vocab_size': 10000,
             'pattern': [(100, t) for t in tokens1],
+            'data_limit': 200
+        },
+        "alpha_200_mp": {
+            'seq_len': 20,
+            'vocab_size': 20,
+            'multiple_patterns': get_multiple_patterns(2),
+            'fp_rate': 0.05,
+            'fn_rate': 0.05,
+            'data_limit': 200
+        },
+        "bravo_200_mp": {
+            'seq_len': 50,
+            'vocab_size': 50,
+            'multiple_patterns': get_multiple_patterns(5),
+            'fp_rate': 0.05,
+            'fn_rate': 0.05,
             'data_limit': 200
         },
     }
