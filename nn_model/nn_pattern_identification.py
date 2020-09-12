@@ -39,7 +39,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, data_limit=None, mul
     early_stop = tf.keras.callbacks.EarlyStopping(
         monitor='val_accuracy',
         min_delta=0.05,
-        patience=20)
+        patience=10)
 
     if multiple_patterns:
         all_patterns = multiple_patterns[0]
@@ -67,67 +67,61 @@ if __name__ == '__main__':
     tokens1 = [10, 11, 12, 13, 14]
 
     experiments = {
-        "alpha": {
-            'seq_len': 20,
-            'vocab_size': 20,
-            'pattern': [(2, t) for t in tokens1]
-        },
-        "bravo": {
-            'seq_len': 50,
-            'vocab_size': 50,
-            'pattern': [(5, t) for t in tokens1]
-        },
-        "charlie": {
-            'seq_len': 100,
-            'vocab_size': 100,
-            'pattern': [(20, t) for t in tokens1]
-        },
-        "delta": {
-            'seq_len': 250,
-            'vocab_size': 500,
-            'pattern': [(30, t) for t in tokens1]
-        },
+        # "alpha": {
+        #     'seq_len': 20,
+        #     'vocab_size': 20,
+        #     'pattern': [(2, t) for t in tokens1]
+        # },
+        # "bravo": {
+        #     'seq_len': 50,
+        #     'vocab_size': 50,
+        #     'pattern': [(5, t) for t in tokens1]
+        # },
+        # "charlie": {
+        #     'seq_len': 100,
+        #     'vocab_size': 100,
+        #     'pattern': [(20, t) for t in tokens1]
+        # },
+        # "delta": {
+        #     'seq_len': 250,
+        #     'vocab_size': 500,
+        #     'pattern': [(30, t) for t in tokens1]
+        # },
         "alpha_200": {
-            'seq_len': 20,
-            'vocab_size': 20,
-            'pattern': [(2, t) for t in tokens1],
+            'seq_len': 50,
+            'vocab_size': 1000,
+            'pattern': [(10, t) for t in tokens1],
             'data_limit': 200
         },
         "bravo_200": {
-            'seq_len': 50,
-            'vocab_size': 50,
-            'pattern': [(5, t) for t in tokens1],
-            'data_limit': 200
-        },
-        "charlie_200": {
             'seq_len': 100,
-            'vocab_size': 100,
+            'vocab_size': 1000,
             'pattern': [(20, t) for t in tokens1],
             'data_limit': 200
         },
+        # "charlie_200": {
+        #     'seq_len': 200,
+        #     'vocab_size': 1000,
+        #     'pattern': [(40, t) for t in tokens1],
+        #     'data_limit': 200
+        # },
         "delta_200": {
-            'seq_len': 250,
+            'seq_len': 300,
             'vocab_size': 500,
             'pattern': [(30, t) for t in tokens1],
             'data_limit': 200
         },
-        "echo_200": {
-            'seq_len': 1000,
-            'vocab_size': 1000,
-            'pattern': [(100, t) for t in tokens1],
-            'data_limit': 200
-        },
         "alpha_200_mp": {
-            'seq_len': 20,
-            'vocab_size': 20,
-            'multiple_patterns': get_multiple_patterns(2),
+            'seq_len': 50,
+            'vocab_size': 1000,
+            'multiple_patterns': get_multiple_patterns(10),
             'fp_rate': 0.05,
             'fn_rate': 0.05,
             'data_limit': 200
         },
         "bravo_200_mp": {
-            'seq_len': 50,
-            'vocab_size': 50,
+            'seq_len': 100,
+            'vocab_size': 1000,
             'multiple_patterns': get_multiple_patterns(5),
             'fp_rate': 0.05,
             'fn_rate': 0.05,
