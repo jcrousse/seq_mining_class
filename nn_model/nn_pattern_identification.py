@@ -1,9 +1,6 @@
 import tensorflow as tf
-from data_sources.data_generator import ExamplesGenerator
+from data_sources.data_generator import ExamplesGenerator, get_multiple_patterns
 
-
-# TODO:
-#  -Recover sequences with prefixspan
 
 def get_dataset(seq_len, vocab_size, seed, pattern=None, batch_size=200, multiple_patterns=None, **kwargs):
     data_generator = ExamplesGenerator(seq_len=seq_len, vocab_size=vocab_size, seed=seed,
@@ -66,17 +63,6 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, data_limit=None, mul
     model.evaluate(test_dataset.take(1000), verbose=2)
 
 
-def get_multiple_patterns(n=2):
-    return [
-        [
-            [(n, 10), (n, 11), (n, 12), (n, 13), (n, 14)],
-            [(n, 1), (n, 2), (n, 3), (n, 4), (n, 5)],
-            [(n, 7), (n, 8), (n, 9), (n, 10), (n, 11)]
-        ],
-        [0.4, 0.3, 0.3]
-    ]
-
-
 if __name__ == '__main__':
     tokens1 = [10, 11, 12, 13, 14]
 
@@ -100,11 +86,6 @@ if __name__ == '__main__':
             'seq_len': 250,
             'vocab_size': 500,
             'pattern': [(30, t) for t in tokens1]
-        },
-        "echo": {
-            'seq_len': 1000,
-            'vocab_size': 1000,
-            'pattern': [(100, t) for t in tokens1]
         },
         "alpha_200": {
             'seq_len': 20,
@@ -133,18 +114,6 @@ if __name__ == '__main__':
         "echo_200": {
             'seq_len': 1000,
             'vocab_size': 1000,
-            'pattern': [(100, t) for t in tokens1],
-            'data_limit': 200
-        },
-        "forxtrot_200": {
-            'seq_len': 2000,
-            'vocab_size': 2000,
-            'pattern': [(100, t) for t in tokens1],
-            'data_limit': 200
-        },
-        "golf_200": {
-            'seq_len': 5000,
-            'vocab_size': 10000,
             'pattern': [(100, t) for t in tokens1],
             'data_limit': 200
         },

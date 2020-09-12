@@ -17,7 +17,7 @@ class ExamplesGenerator:
         :param pos_pct Percentage of examples where the pattern is "enforced"
         :param: pattern: A list of tuples (num_elements <int>, token_id<int>): Number of elements between two tokens
         and token_id, the expected token to be found.
-        :param multiple_patterns list containing two lists: A list of patterns (see pattern),
+        :param multiple_patterns: list containing two lists: A list of patterns (see pattern),
         and a list of weights (float)
         :param fp_rate: float, false positive rate
         :param fn_rate: float, false negative rate
@@ -95,7 +95,7 @@ class ExamplesGenerator:
     @staticmethod
     def can_fit_pattern(examples, pattern):
         """ check that the pattern fits in the example. If not, we should throw a warning (only once).
-        Currently the only consraint is that the length of the examples is longer or equal to the pattern length
+        Currently the only constraint is that the length of the examples is longer or equal to the pattern length
         (as there is currently no minimal amount of tokens between two pattern token).
         Change here if we want to introduce minimal number of tokens between two patten tokens"""
         return len(pattern) <= len(examples)
@@ -125,6 +125,17 @@ class ExamplesGenerator:
 
     @staticmethod
     def seq_to_pattern(seq, gap_size=1):
-        """Convert a sequelce (list of tokens) to a patter (list of tuples (gap_size, token))
+        """Convert a sequence (list of tokens) to a patter (list of tuples (gap_size, token))
         """
         return [(gap_size, t) for t in seq]
+
+
+def get_multiple_patterns(n=2):
+    return [
+        [
+            [(n, 10), (n, 11), (n, 12), (n, 13), (n, 14)],
+            [(n, 1), (n, 2), (n, 3), (n, 4), (n, 5)],
+            [(n, 7), (n, 8), (n, 9), (n, 10), (n, 11)]
+        ],
+        [0.4, 0.3, 0.3]
+    ]
