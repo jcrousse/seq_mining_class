@@ -13,10 +13,10 @@ def get_dataset(seq_len, vocab_size, seed, pattern=None, batch_size=200, multipl
 
 
 def get_model(vocab_size, embed_size=4):
-    lstm_units = 16
+    rnn_units = 16
     inputs = tf.keras.layers.Input(shape=(None,), name="input")
     embedded = tf.keras.layers.Embedding(vocab_size, embed_size)(inputs)
-    seq_model = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(lstm_units))(embedded)
+    seq_model = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(rnn_units))(embedded)
     output = tf.keras.layers.Dense(1, name="output")(seq_model)
     model = tf.keras.Model(inputs=inputs, outputs=output)
     return model
@@ -39,7 +39,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, data_limit=None, mul
     early_stop = tf.keras.callbacks.EarlyStopping(
         monitor='val_accuracy',
         min_delta=0.05,
-        patience=10)
+        patience=15)
 
     if multiple_patterns:
         all_patterns = multiple_patterns[0]
@@ -49,7 +49,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, data_limit=None, mul
     actual_vocab_size = max([vocab_size] + [e[1] for p in all_patterns for e in p])
 
     model = get_model(actual_vocab_size + 1)
-    model.compile(optimizer='adam',
+    model.compile(optimizer='rmsprop',
                   loss=tf.losses.BinaryCrossentropy(from_logits=True),
                   metrics=['accuracy'],
                   )
@@ -87,30 +87,30 @@ if __name__ == '__main__':
         #     'vocab_size': 500,
         #     'pattern': [(30, t) for t in tokens1]
         # },
-        "alpha_200": {
-            'seq_len': 50,
-            'vocab_size': 1000,
-            'pattern': [(10, t) for t in tokens1],
-            'data_limit': 200
-        },
-        "bravo_200": {
-            'seq_len': 100,
-            'vocab_size': 1000,
-            'pattern': [(20, t) for t in tokens1],
-            'data_limit': 200
-        },
+        # "alpha_200": {
+        #     'seq_len': 50,
+        #     'vocab_size': 1000,
+        #     'pattern': [(10, t) for t in tokens1],
+        #     'data_limit': 200
+        # },
+        # "bravo_200": {
+        #     'seq_len': 100,
+        #     'vocab_size': 1000,
+        #     'pattern': [(20, t) for t in tokens1],
+        #     'data_limit': 200
+        # },
         # "charlie_200": {
         #     'seq_len': 200,
         #     'vocab_size': 1000,
         #     'pattern': [(40, t) for t in tokens1],
         #     'data_limit': 200
         # },
-        "delta_200": {
-            'seq_len': 300,
-            'vocab_size': 500,
-            'pattern': [(30, t) for t in tokens1],
-            'data_limit': 200
-        },
+        # "delta_200": {
+        #     'seq_len': 300,
+        #     'vocab_size': 500,
+        #     'pattern': [(30, t) for t in tokens1],
+        #     'data_limit': 200
+        # },
         "alpha_200_mp": {
             'seq_len': 50,
             'vocab_size': 1000,
@@ -119,14 +119,14 @@ if __name__ == '__main__':
             'fn_rate': 0.05,
             'data_limit': 200
         },
-        "bravo_200_mp": {
-            'seq_len': 100,
-            'vocab_size': 1000,
-            'multiple_patterns': get_multiple_patterns(5),
-            'fp_rate': 0.05,
-            'fn_rate': 0.05,
-            'data_limit': 200
-        },
+        # "bravo_200_mp": {
+        #     'seq_len': 100,
+        #     'vocab_size': 1000,
+        #     'multiple_patterns': get_multiple_patterns(5),
+        #     'fp_rate': 0.05,
+        #     'fn_rate': 0.05,
+        #     'data_limit': 200
+        # },
     }
     for exp_name, exp_parameters in experiments.items():
         run_experiment(exp_name, **exp_parameters)
