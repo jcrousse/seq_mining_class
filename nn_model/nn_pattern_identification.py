@@ -1,5 +1,20 @@
 import tensorflow as tf
+import wandb
+from wandb.keras import WandbCallback
+
 from data_sources.data_generator import ExamplesGenerator, get_multiple_patterns
+
+hyperparameter_defaults = dict(
+    dropout=0.5,
+    rnn_size1=16,
+    rnn_size2=32,
+    dense_size1=64,
+    dense_size2=32,
+    learning_rate=0.001,
+    )
+
+wandb.init(config=hyperparameter_defaults, project="seq_mining")
+config = wandb.config
 
 
 def get_dataset(seq_len, vocab_size, seed, pattern=None, batch_size=200, multiple_patterns=None, **kwargs):
@@ -13,25 +28,36 @@ def get_dataset(seq_len, vocab_size, seed, pattern=None, batch_size=200, multipl
 
 
 def get_model(vocab_size, embed_size=4):
-    rnn_units = 16
     inputs = tf.keras.layers.Input(shape=(None,), name="input")
     embedded = tf.keras.layers.Embedding(vocab_size, embed_size)(inputs)
-    seq_model = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(rnn_units))(embedded)
-    output = tf.keras.layers.Dense(1, name="output")(seq_model)
+    seq_model = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(config.rnn_size1))(embedded)
+    seq_model = tf.keras.layers.Dropout(config.dropout)(seq_model)
+
+    dense1 = tf.keras.layers.Dense(config.dense_size1, activation='relu')(seq_model)
+    dense1 = tf.keras.layers.Dropout(config.dropout)(dense1)
+
+    dense2 = tf.keras.layers.Dense(config.dense_size2, activation='relu')(dense1)
+    dense2 = tf.keras.layers.Dropout(config.dropout)(dense2)
+
+    output = tf.keras.layers.Dense(1, name="output")(dense2)
     model = tf.keras.Model(inputs=inputs, outputs=output)
     return model
 
 
-def run_experiment(name, seq_len, vocab_size, pattern=None, data_limit=None, multiple_patterns=None, **kwargs):
+def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_limit=None, multiple_patterns=None,
+                   **kwargs):
+
     train_dataset = get_dataset(seq_len, vocab_size, 111,
                                 pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
-    validation_dataset = get_dataset(seq_len, vocab_size, 222, batch_size=256,
+    validation_dataset = get_dataset(seq_len, vocab_size, 222, batch_size=batch_size,
                                      pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
-    test_dataset = get_dataset(seq_len, vocab_size, 333, batch_size=256,
+    test_dataset = get_dataset(seq_len, vocab_size, 333, batch_size=batch_size,
                                pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
 
     if isinstance(data_limit, int):
-        train_dataset = get_dataset(seq_len, vocab_size, 111, pattern, batch_size=data_limit).take(1).repeat()
+        num_batches = data_limit // batch_size
+        train_dataset = train_dataset.take(num_batches).repeat()
+        validation_dataset = validation_dataset.take(num_batches).repeat()
 
     tensorboard = tf.keras.callbacks.TensorBoard(log_dir=f"tb_logs/{name}",
                                                  histogram_freq=10)
