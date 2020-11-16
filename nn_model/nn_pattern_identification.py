@@ -11,9 +11,13 @@ hyperparameter_defaults = dict(
     dense_size1=64,
     dense_size2=32,
     learning_rate=0.001,
+    cnn_filters1=32,
+    cnn_size1=10,
+    cnn_filters2=16,
+    cnn_size2=5
     )
 
-wandb.init(config=hyperparameter_defaults, project="seq_mining")
+wandb.init(config=hyperparameter_defaults, project="seq_mining_cnn")
 config = wandb.config
 
 
@@ -39,8 +43,39 @@ def get_rnn_model(vocab_size, embed_size=4):
     dense2 = tf.keras.layers.Dense(config.dense_size2, activation='relu')(dense1)
     dense2 = tf.keras.layers.Dropout(config.dropout)(dense2)
 
-    output = tf.keras.layers.Dense(1, name="output")(dense2)
+    output = tf.keras.layers.Dense(1, name="output", activation='sigmoid')(dense2)
     model = tf.keras.Model(inputs=inputs, outputs=output)
+
+    model.compile(optimizer='rmsprop',
+                  loss=tf.losses.BinaryCrossentropy(from_logits=True),
+                  metrics=['accuracy'],
+                  )
+
+    return model
+
+
+def get_cnn_model(vocab_size, in_len, embed_size=4):
+
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Embedding(vocab_size, embed_size, input_length=in_len),
+        tf.keras.layers.Conv1D(config.cnn_filters1, config.cnn_size1, padding="same", activation='relu'),
+        tf.keras.layers.MaxPool1D(),
+        tf.keras.layers.Conv1D(config.cnn_filters2, config.cnn_size2, padding="same", activation='relu'),
+        tf.keras.layers.MaxPool1D(),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(config.dense_size1, activation='relu'),
+        tf.keras.layers.Dropout(config.dropout),
+        tf.keras.layers.Dense(config.dense_size2, activation='relu'),
+        tf.keras.layers.Dropout(config.dropout),
+        tf.keras.layers.Dense(1, name="output", activation='sigmoid')
+
+    ])
+
+    model.compile(optimizer='adam',
+                  loss=tf.losses.BinaryCrossentropy(from_logits=True),
+                  metrics=['accuracy'],
+                  )
+
     return model
 
 
@@ -65,7 +100,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_
     early_stop = tf.keras.callbacks.EarlyStopping(
         monitor='val_accuracy',
         min_delta=0.05,
-        patience=15)
+        patience=10)
 
     if multiple_patterns:
         all_patterns = multiple_patterns[0]
@@ -74,11 +109,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_
 
     actual_vocab_size = max([vocab_size] + [e[1] for p in all_patterns for e in p])
 
-    model = get_rnn_model(actual_vocab_size + 1)
-    model.compile(optimizer='rmsprop',
-                  loss=tf.losses.BinaryCrossentropy(from_logits=True),
-                  metrics=['accuracy'],
-                  )
+    model = get_cnn_model(actual_vocab_size + 1, seq_len)
 
     model.fit(train_dataset,
               validation_data=validation_dataset,
