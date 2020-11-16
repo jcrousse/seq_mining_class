@@ -27,7 +27,7 @@ def get_dataset(seq_len, vocab_size, seed, pattern=None, batch_size=200, multipl
     return dataset
 
 
-def get_model(vocab_size, embed_size=4):
+def get_rnn_model(vocab_size, embed_size=4):
     inputs = tf.keras.layers.Input(shape=(None,), name="input")
     embedded = tf.keras.layers.Embedding(vocab_size, embed_size)(inputs)
     seq_model = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(config.rnn_size1))(embedded)
@@ -74,7 +74,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_
 
     actual_vocab_size = max([vocab_size] + [e[1] for p in all_patterns for e in p])
 
-    model = get_model(actual_vocab_size + 1)
+    model = get_rnn_model(actual_vocab_size + 1)
     model.compile(optimizer='rmsprop',
                   loss=tf.losses.BinaryCrossentropy(from_logits=True),
                   metrics=['accuracy'],
@@ -85,7 +85,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_
               epochs=40,
               steps_per_epoch=50,
               validation_steps=1,
-              callbacks=[tensorboard, early_stop])
+              callbacks=[tensorboard, early_stop, WandbCallback()])
     model.evaluate(test_dataset.take(1000), verbose=2)
 
 
