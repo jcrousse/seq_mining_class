@@ -10,11 +10,13 @@ hyperparameter_defaults = dict(
     rnn_size2=32,
     dense_size1=64,
     dense_size2=32,
-    learning_rate=0.001,
     cnn_filters1=32,
     cnn_size1=10,
     cnn_filters2=16,
-    cnn_size2=5
+    cnn_size2=5,
+    seq_len=500,
+    dist_words=10,
+    vocab_size=1000
     )
 
 wandb.init(config=hyperparameter_defaults, project="seq_mining_cnn")
@@ -82,6 +84,10 @@ def get_cnn_model(vocab_size, in_len, embed_size=4):
 def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_limit=None, multiple_patterns=None,
                    **kwargs):
 
+    seq_len = config.seq_len
+    vocab_size = config.vocab_size
+    multiple_patterns = get_multiple_patterns(config.dist_words)
+
     train_dataset = get_dataset(seq_len, vocab_size, 111,
                                 pattern=pattern, multiple_patterns=multiple_patterns, **kwargs)
     validation_dataset = get_dataset(seq_len, vocab_size, 222, batch_size=batch_size,
@@ -109,7 +115,7 @@ def run_experiment(name, seq_len, vocab_size, pattern=None, batch_size=32, data_
 
     actual_vocab_size = max([vocab_size] + [e[1] for p in all_patterns for e in p])
 
-    model = get_cnn_model(actual_vocab_size + 1, seq_len)
+    model = get_rnn_model(actual_vocab_size + 1, seq_len)
 
     model.fit(train_dataset,
               validation_data=validation_dataset,

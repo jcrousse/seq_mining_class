@@ -5,8 +5,8 @@ if __name__ == '__main__':
         experiments = {
             "alpha_200_mp": {
                 'seq_len': 500,
-                'vocab_size': 1000,
-                'multiple_patterns': get_multiple_patterns(20),
+                'vocab_size': 2000,
+                'multiple_patterns': get_multiple_patterns(10),
                 'fp_rate': 0.05,
                 'fn_rate': 0.05,
                 'data_limit': 200
